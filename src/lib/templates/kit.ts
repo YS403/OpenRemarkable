@@ -45,8 +45,8 @@ export async function createDocument(title: string, day: string): Promise<{ doc:
   const doc = await PDFDocument.create();
   const date = dayDate(day);
   doc.setTitle(title);
-  doc.setProducer("myremarkable");
-  doc.setCreator("myremarkable");
+  doc.setProducer("openremarkable");
+  doc.setCreator("openremarkable");
   doc.setCreationDate(date);
   doc.setModificationDate(date);
   return { doc, fonts: await embedFonts(doc) };

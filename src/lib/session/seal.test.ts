@@ -24,3 +24,16 @@ describe("seal / unseal", () => {
     expect(unseal("not-a-token", SECRET)).toBeNull();
   });
 });
+
+describe("sessions from before the rename", () => {
+  it("still opens cookies sealed with the old key label", async () => {
+    const { createCipheriv, createHash, randomBytes } = await import("node:crypto");
+    const key = createHash("sha256").update(`myremarkable-session:${SECRET}`).digest();
+    const iv = randomBytes(12);
+    const cipher = createCipheriv("aes-256-gcm", key, iv);
+    const body = Buffer.concat([cipher.update("legacy", "utf8"), cipher.final()]);
+    const token = ["v1", iv.toString("base64url"), body.toString("base64url"), cipher.getAuthTag().toString("base64url")].join(".");
+    expect(unseal(token, SECRET)).toBe("legacy");
+    expect(unseal(token, "b".repeat(40))).toBeNull();
+  });
+});

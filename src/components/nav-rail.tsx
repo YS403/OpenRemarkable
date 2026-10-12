@@ -57,7 +57,7 @@ export function NavRail({
         <span className="grid size-7 shrink-0 place-items-center rounded-md bg-white/15 text-xs font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]" aria-hidden>
           rm
         </span>
-        <span className={`${label} text-sm font-semibold tracking-tight`}>myremarkable</span>
+        <span className={`${label} text-sm font-semibold tracking-tight`}>openremarkable</span>
       </div>
 
       {PAGES.map(({ href, label: text, icon: PageIcon }) => {

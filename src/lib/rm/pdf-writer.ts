@@ -65,7 +65,7 @@ export class PdfBuilder {
 
   /** Draw into an existing document (e.g. an annotated PDF). */
   static async fromDocument(doc: PDFDocument, title?: string): Promise<PdfBuilder> {
-    doc.setProducer("myremarkable");
+    doc.setProducer("openremarkable");
     if (title) doc.setTitle(title);
     const font = await doc.embedFont(StandardFonts.Helvetica);
     return new PdfBuilder(doc, font, new Set(font.getCharacterSet()));

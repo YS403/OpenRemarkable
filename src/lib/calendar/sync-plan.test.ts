@@ -80,3 +80,21 @@ describe("manifest", () => {
     expect(readManifest(await PDFDocument.load(await pdf.save()))).toEqual(manifest);
   });
 });
+
+describe("manifest from before the rename", () => {
+  it("is read from the old key, and rewritten under the new one", async () => {
+    const { PDFHexString, PDFName } = await import("pdf-lib");
+    const pdf = await PDFDocument.create();
+    pdf.addPage();
+    const manifest: CalendarManifest = { v: 1, days: { "2026-10-12": { fingerprint: "old", versions: [{ pdfStart: 0, pdfCount: 1 }] } } };
+    pdf.catalog.set(PDFName.of("MyRemarkableCalendar"), PDFHexString.fromText(JSON.stringify(manifest)));
+    const legacy = await PDFDocument.load(await pdf.save());
+    expect(readManifest(legacy)).toEqual(manifest);
+
+    writeManifest(legacy, manifest);
+    const rewritten = await PDFDocument.load(await legacy.save());
+    expect(rewritten.catalog.has(PDFName.of("MyRemarkableCalendar"))).toBe(false);
+    expect(rewritten.catalog.has(PDFName.of("OpenRemarkableCalendar"))).toBe(true);
+    expect(readManifest(rewritten)).toEqual(manifest);
+  });
+});

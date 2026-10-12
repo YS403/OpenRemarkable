@@ -17,7 +17,7 @@ export const IS_PRODUCTION = process.env.NODE_ENV === "production";
  * Writable directory for the file-based storage driver and caches. Serverless
  * hosts only allow writes under /tmp, which is per-instance and short-lived.
  */
-export const DATA_DIR = process.env.DATA_DIR ?? (IS_SERVERLESS ? "/tmp/myremarkable" : path.join(process.cwd(), ".data"));
+export const DATA_DIR = process.env.DATA_DIR ?? (IS_SERVERLESS ? "/tmp/openremarkable" : path.join(process.cwd(), ".data"));
 
 /** Storage driver for user data. Only "fs" exists until a database is added. */
 export const STORAGE_DRIVER = process.env.STORAGE_DRIVER ?? "fs";

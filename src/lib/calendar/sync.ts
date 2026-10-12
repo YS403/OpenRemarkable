@@ -77,7 +77,7 @@ export async function syncCalendar(
           // first sync (or the old document was deleted): create it with every day
           const pdf = await PDFDocument.create();
           pdf.setTitle(CALENDAR_DOCUMENT_NAME);
-          pdf.setProducer("myremarkable");
+          pdf.setProducer("openremarkable");
           const fonts = await embedFonts(pdf);
           const manifest: CalendarManifest = { v: 1, days: {} };
           for (const plan of plans) {

@@ -17,10 +17,13 @@ export interface CalendarManifest {
   days: Record<string, { fingerprint: string; versions: { pdfStart: number; pdfCount: number }[] }>;
 }
 
-const MANIFEST_KEY = PDFName.of("MyRemarkableCalendar");
+const MANIFEST_KEY = PDFName.of("OpenRemarkableCalendar");
+/** key used before the app was renamed; read so already-synced calendars keep their history */
+const LEGACY_MANIFEST_KEY = PDFName.of("MyRemarkableCalendar");
 
 export function readManifest(pdf: PDFDocument): CalendarManifest | null {
-  const value = pdf.catalog.lookupMaybe(MANIFEST_KEY, PDFString, PDFHexString);
+  const value =
+    pdf.catalog.lookupMaybe(MANIFEST_KEY, PDFString, PDFHexString) ?? pdf.catalog.lookupMaybe(LEGACY_MANIFEST_KEY, PDFString, PDFHexString);
   if (!value) return null;
   try {
     const parsed = JSON.parse(value.decodeText()) as CalendarManifest;
@@ -32,6 +35,7 @@ export function readManifest(pdf: PDFDocument): CalendarManifest | null {
 
 export function writeManifest(pdf: PDFDocument, manifest: CalendarManifest): void {
   pdf.catalog.set(MANIFEST_KEY, PDFHexString.fromText(JSON.stringify(manifest)));
+  pdf.catalog.delete(LEGACY_MANIFEST_KEY);
 }
 
 export type DayAction = "add" | "update" | "keep";

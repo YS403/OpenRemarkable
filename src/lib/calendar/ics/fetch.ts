@@ -58,7 +58,7 @@ export async function fetchCalendarText(link: URL, provider: CalendarProvider): 
       response = await fetch(url, {
         redirect: "manual",
         signal: AbortSignal.timeout(TIMEOUT_MS),
-        headers: { Accept: "text/calendar, */*;q=0.5", "User-Agent": "myremarkable-calendar/1.0" },
+        headers: { Accept: "text/calendar, */*;q=0.5", "User-Agent": "openremarkable-calendar/1.0" },
       });
     } catch {
       throw new CalendarLinkError(`Couldn't reach ${providerLabel(provider)}. Check the link and try again.`);
