@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+/*
+ * Wireframe stage: neutral light theme for content. The brand accent (a
+ * metallic steel blue after the reMarkable 2) is applied to the navigation
+ * rail first; the rest of the UI adopts it in the design pass.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  color-scheme: light;
+
+  /* brand: metallic steel blue, light sheen at the top to dark at the bottom */
+  --brand-sheen: #4b6c94;
+  --brand-500: #34557d;
+  --brand-700: #263f5f;
+  --brand-900: #1b2d45;
+  /* text on brand surfaces (AA against --brand-700 and darker) */
+  --on-brand: #eef3f9;
+  --on-brand-muted: #b3c3d6;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand-sheen: var(--brand-sheen);
+  --color-brand-500: var(--brand-500);
+  --color-brand-700: var(--brand-700);
+  --color-brand-900: var(--brand-900);
+  --color-on-brand: var(--on-brand);
+  --color-on-brand-muted: var(--on-brand-muted);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Brushed-metal surface: a soft vertical gradient plus a fine sheen line at the top edge. */
+.surface-metal {
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.1) 0, transparent 1px),
+    linear-gradient(170deg, var(--brand-sheen) 0%, var(--brand-500) 28%, var(--brand-700) 70%, var(--brand-900) 100%);
+  box-shadow: inset -1px 0 0 rgb(255 255 255 / 0.08);
+}
+
+/* Sync button confirmation: the check pops in and the button glows once. */
+@media (prefers-reduced-motion: no-preference) {
+  .sync-pop {
+    animation: sync-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .sync-flash {
+    animation: sync-flash 900ms ease-out;
+  }
+}
+
+@keyframes sync-pop {
+  from {
+    transform: scale(0.3) rotate(-25deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes sync-flash {
+  from {
+    box-shadow: 0 0 0 0 rgb(4 120 87 / 0.55);
+  }
+  to {
+    box-shadow: 0 0 0 10px rgb(4 120 87 / 0);
+  }
+}
