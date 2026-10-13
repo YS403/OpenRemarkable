@@ -1,6 +1,7 @@
 import { PDFDocument, type PDFFont, type PDFPage, type PDFRef, rgb, StandardFonts } from "pdf-lib";
 
 import type { CalendarEvent } from "@/lib/calendar/types";
+import type { DayPrayers } from "@/lib/prayer/timetable";
 import { DEFAULT_PAPER, PT_PER_PX } from "@/lib/rm/constants";
 
 /**
@@ -31,6 +32,8 @@ export interface TemplateInput {
   /** IANA zone the page is laid out in, e.g. "Europe/London" */
   timeZone: string;
   locale?: string;
+  /** the day's prayer windows, when the user has a prayer timetable */
+  prayers?: DayPrayers | null;
 }
 
 export interface Fonts {
@@ -144,6 +147,29 @@ export function fit(font: PDFFont, value: string, size: number, maxWidth: number
   if (font.widthOfTextAtSize(s, size) <= maxWidth) return s;
   while (s.length > 0 && font.widthOfTextAtSize(`${s}...`, size) > maxWidth) s = s.slice(0, -1);
   return s.length > 0 ? `${s.trimEnd()}...` : "";
+}
+
+/** Break text into lines that fit `maxWidth`: at most `maxLines`, the last one ellipsised if cut. */
+export function wrap(font: PDFFont, value: string, size: number, maxWidth: number, maxLines = 3): string[] {
+  const words = safe(font, value).split(/\s+/).filter(Boolean);
+  const lines: string[] = [];
+  let line = "";
+  for (let i = 0; i < words.length; i++) {
+    const next = line ? `${line} ${words[i]}` : words[i];
+    if (!line || font.widthOfTextAtSize(next, size) <= maxWidth) {
+      line = next;
+      continue;
+    }
+    if (lines.length === maxLines - 1) {
+      // last allowed line: put the rest on it and cut with an ellipsis
+      lines.push(fit(font, `${line} ${words.slice(i).join(" ")}`, size, maxWidth));
+      return lines;
+    }
+    lines.push(line);
+    line = words[i];
+  }
+  if (line) lines.push(fit(font, line, size, maxWidth));
+  return lines;
 }
 
 // ---------------------------------------------------------------- dates

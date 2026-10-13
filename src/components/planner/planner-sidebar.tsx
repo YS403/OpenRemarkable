@@ -9,6 +9,7 @@ import type { CalendarClient } from "@/lib/client/calendar";
 import { type TemplateId, TEMPLATES } from "@/lib/templates/names";
 
 import { CalendarConnectDialog } from "./calendar-connect-dialog";
+import { PrayerTimesSection } from "./prayer-timetable";
 
 const PROVIDER_ICON: Record<CalendarProvider, Icon> = {
   google: GoogleLogo,
@@ -17,13 +18,14 @@ const PROVIDER_ICON: Record<CalendarProvider, Icon> = {
 
 const providerName = (id: CalendarProvider) => PROVIDERS.find((p) => p.id === id)?.name ?? id;
 
-/** Right column on the Calendar page: template choice, connected accounts, and providers to connect. */
-export function CalendarSidebar({
+/** Right column on the Planner page: template choice, connected accounts, and providers to connect. */
+export function PlannerSidebar({
   client,
   template,
   onTemplate,
   connections,
   onConnectionsChanged,
+  onPrayersChanged,
   onCollapse,
 }: {
   client: CalendarClient;
@@ -32,6 +34,8 @@ export function CalendarSidebar({
   /** null while loading */
   connections: CalendarConnection[] | null;
   onConnectionsChanged: () => Promise<void>;
+  /** the prayer switch or timetable changed: re-render the preview */
+  onPrayersChanged: () => void;
   onCollapse: () => void;
 }) {
   // which row is busy, and the last message per row (keyed by provider or connection id)
@@ -98,13 +102,17 @@ export function CalendarSidebar({
           </li>
         </Section>
 
+        <ul>
+          <PrayerTimesSection onChanged={onPrayersChanged} />
+        </ul>
+
         <Section title="Connected">
           {connections === null && <li className="px-3 py-2 text-neutral-500">loading…</li>}
           {connections?.length === 0 && (
             <li className="px-3 py-2 text-neutral-500">
               (none yet) connect a calendar below.{" "}
               {!client.demo && (
-                <Link href="/calendar?demo=outlook" className="text-neutral-900 underline">
+                <Link href="/planner?demo=outlook" className="text-neutral-900 underline">
                   preview with sample Outlook data
                 </Link>
               )}
@@ -165,7 +173,7 @@ export function CalendarSidebar({
             <ol className="list-decimal space-y-1 pl-5 text-xs text-neutral-600">
             <li>Connect Google Calendar or Outlook with your calendar&apos;s private link (read-only). Add as many as you like, up to 5.</li>
             <li>Pick a template. The middle shows a day exactly as it will look.</li>
-            <li>Sync: today and the next 6 days go into one &quot;Calendar&quot; document on your reMarkable. Sync again any time; days whose meetings changed get an updated page after the old one, so your notes stay put.</li>
+            <li>Sync: today and the next 6 days go into one &quot;Planner&quot; document on your reMarkable. Sync again any time; days whose meetings changed are redrawn on the same page, and anything you wrote on them stays.</li>
             </ol>
           </div>
         </details>

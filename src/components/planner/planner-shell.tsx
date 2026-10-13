@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import type { CalendarConnection, CalendarEvent, CalendarProvider } from "@/lib/calendar/types";
+import type { DayPrayers } from "@/lib/prayer/timetable";
 import { type ConnectionStatus, fetchStatus } from "@/lib/client/api";
 import { type CalendarClient, demoCalendar, liveCalendar } from "@/lib/client/calendar";
 import { createLocalSetting } from "@/lib/client/local-setting";
@@ -12,7 +13,7 @@ import { DEFAULT_TEMPLATE, isTemplateId, type TemplateId, templateName } from "@
 
 import { NavRail } from "../nav-rail";
 import { SidePanel } from "../side-panel";
-import { CalendarSidebar } from "./calendar-sidebar";
+import { PlannerSidebar } from "./planner-sidebar";
 import { dayKey, dayLabel, shiftDay, viewerTimeZone } from "./day";
 import { TemplatePreview } from "./template-preview";
 
@@ -25,10 +26,10 @@ const DEMO_BY_DEFAULT = false;
 const templateSetting = createLocalSetting<TemplateId>("calendar-template", DEFAULT_TEMPLATE, (raw) => (isTemplateId(raw) ? raw : undefined));
 
 /**
- * The Calendar page: the reMarkable page that would be created for the chosen
+ * The Planner page: the reMarkable page that would be created for the chosen
  * day in the middle, connected calendars and that day's meetings on the right.
  */
-export function CalendarShell() {
+export function PlannerShell() {
   const demoParam = useSearchParams().get("demo");
   const demo = demoParam === null ? DEMO_BY_DEFAULT : demoParam !== "0";
   const client: CalendarClient = useMemo(
@@ -81,17 +82,36 @@ export function CalendarShell() {
     };
   }, [client, day, connections, eventsKey]);
 
+  // the day's prayer windows from the user's timetable (null when there's none)
+  // bumped when the prayer switch or timetable changes, to fetch again
+  const [prayerVersion, setPrayerVersion] = useState(0);
+  const [prayerFetch, setPrayerFetch] = useState<{ key: string; prayers: DayPrayers | null } | null>(null);
+  const prayerKey = `${day}|${prayerVersion}`;
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/calendar/prayer?day=${encodeURIComponent(day)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { prayers: null }))
+      .then(
+        (body: { prayers: DayPrayers | null }) => active && setPrayerFetch({ key: prayerKey, prayers: body.prayers }),
+        () => active && setPrayerFetch({ key: prayerKey, prayers: null }),
+      );
+    return () => {
+      active = false;
+    };
+  }, [day, prayerKey]);
+  const prayers = prayerFetch?.key === prayerKey ? prayerFetch.prayers : undefined;
+
   const events = fetched?.key === eventsKey ? fetched.events : null;
   const problems = fetched?.key === eventsKey ? fetched.problems : [];
 
   // Render whenever the template or the day's meetings change. The preview
   // shows these exact bytes, which are also what gets saved.
-  const pdfKey = `${template}|${eventsKey}`;
+  const pdfKey = `${template}|${eventsKey}|${prayerKey}|${prayers ? "p" : "-"}`;
   useEffect(() => {
-    if (events === null) return;
+    if (events === null || prayers === undefined) return;
     let active = true;
     import("@/lib/templates")
-      .then(({ renderTemplate }) => renderTemplate(template, { day, events, timeZone: viewerTimeZone() }))
+      .then(({ renderTemplate }) => renderTemplate(template, { day, events, timeZone: viewerTimeZone(), prayers }))
       .then(
         (bytes) => {
           if (!active) return;
@@ -103,7 +123,7 @@ export function CalendarShell() {
     return () => {
       active = false;
     };
-  }, [events, day, template, pdfKey]);
+  }, [events, day, template, pdfKey, prayers]);
 
   async function refreshConnections() {
     setConnections(await client.connections());
@@ -117,7 +137,7 @@ export function CalendarShell() {
           {client.demo && (
             <div role="note" className="flex items-center gap-3 border-b border-dashed border-neutral-500 bg-neutral-50 px-4 py-1.5 text-xs">
               <span className="flex-1">Demo · sample meetings, not your real calendar. Saving still creates the page on your reMarkable.</span>
-              <Link href="/calendar" className="underline">
+              <Link href="/planner" className="underline">
                 exit demo
               </Link>
             </div>
@@ -140,12 +160,13 @@ export function CalendarShell() {
         </main>
         <SidePanel storageKey="calendars" label="Calendars">
           {(collapse) => (
-            <CalendarSidebar
+            <PlannerSidebar
               client={client}
               template={template}
               onTemplate={templateSetting.set}
               connections={connections}
               onConnectionsChanged={refreshConnections}
+              onPrayersChanged={() => setPrayerVersion((v) => v + 1)}
               onCollapse={collapse}
             />
           )}

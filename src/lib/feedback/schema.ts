@@ -4,7 +4,7 @@ import { z } from "zod";
 export const featureRequestSchema = z.object({
   message: z.string().trim().min(3, "Tell us a little more.").max(2000, "Please keep it under 2000 characters."),
   email: z.union([z.literal(""), z.email("That email doesn't look right.")]).optional(),
-  /** where in the app it was sent from, e.g. "/calendar" */
+  /** where in the app it was sent from, e.g. "/planner" */
   page: z.string().max(200),
 });
 

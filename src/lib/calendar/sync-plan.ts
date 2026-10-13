@@ -6,15 +6,31 @@ import { keysBetween } from "./sort-key";
  * Pure planning for the synced calendar document: what each day needs, and
  * where new pages go in reMarkable's page order. No I/O, so it is unit tested.
  *
- * The rule that protects handwriting: pages already in the document are never
- * moved, changed or removed. Sync only appends pages to the PDF and inserts
- * them into the page order.
+ * The rule that protects handwriting: page entries already in the document are
+ * never moved or removed. A changed day is redrawn in place (same PDF page,
+ * same page id), so strokes the user wrote on it stay on top of the new
+ * background; only extra pages a day grows are inserted into the page order.
  */
 
 /** Which PDF pages hold which day, kept inside the PDF itself (no database needed). */
 export interface CalendarManifest {
   v: 1;
-  days: Record<string, { fingerprint: string; versions: { pdfStart: number; pdfCount: number }[] }>;
+  days: Record<string, ManifestDay>;
+}
+
+export interface ManifestDay {
+  fingerprint: string;
+  /** where the day was written; older syncs appended a new version per change */
+  versions: { pdfStart: number; pdfCount: number }[];
+  /** the PDF pages that currently show the day (redrawn in place on change) */
+  pages?: number[];
+}
+
+/** PDF pages currently showing a day: its in-place pages, else its latest version. */
+export function currentPages(entry: ManifestDay): number[] {
+  if (entry.pages?.length) return entry.pages;
+  const last = entry.versions.at(-1);
+  return last ? Array.from({ length: last.pdfCount }, (_, i) => last.pdfStart + i) : [];
 }
 
 const MANIFEST_KEY = PDFName.of("OpenRemarkableCalendar");
@@ -40,7 +56,7 @@ export function writeManifest(pdf: PDFDocument, manifest: CalendarManifest): voi
 
 export type DayAction = "add" | "update" | "keep";
 
-/** New day → add; meetings changed → add an updated page after the old one; same → keep. */
+/** New day → add; meetings changed → redraw its page in place; same → keep. */
 export function decide(manifest: CalendarManifest, day: string, fingerprint: string): DayAction {
   const entry = manifest.days[day];
   if (!entry) return "add";
@@ -60,7 +76,7 @@ export interface CPage {
 export interface Insertion {
   day: string;
   action: "add" | "update";
-  /** PDF page indices of the freshly appended pages, in order */
+  /** PDF page indices of the freshly appended pages, in order (for "update": pages beyond the ones redrawn in place) */
   pdfPages: number[];
 }
 
@@ -68,7 +84,7 @@ const TIMESTAMP = "1:2";
 
 /**
  * Page-list entries for newly appended PDF pages, positioned so that:
- * - an updated day's new version sits right after that day's existing pages
+ * - an updated day's extra pages sit right after that day's existing pages
  * - a new day sits after the latest earlier day (or before the earliest later day)
  * Existing entries are never changed. `manifest` must already include the new versions.
  */
@@ -76,6 +92,7 @@ export function planPageEntries(pages: readonly CPage[], manifest: CalendarManif
   const dayOfPdfPage = new Map<number, string>();
   for (const [day, entry] of Object.entries(manifest.days)) {
     for (const v of entry.versions) for (let i = 0; i < v.pdfCount; i++) dayOfPdfPage.set(v.pdfStart + i, day);
+    for (const page of entry.pages ?? []) dayOfPdfPage.set(page, day);
   }
 
   // current visible order; grows as insertions are placed so later ones see them

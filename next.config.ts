@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
     "/api/projects/*/export": ["./public/fonts/inter/**/*"],
   },
   partialPrefetching: true,
+  // the Planner page used to be called Calendar; keep old links and bookmarks working
+  async redirects() {
+    return [{ source: "/calendar", destination: "/planner", permanent: true }];
+  },
   turbopack: {
     rules: {
       "*.css": {

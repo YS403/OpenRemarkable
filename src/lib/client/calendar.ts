@@ -14,9 +14,9 @@ export interface DayEvents {
 }
 
 /**
- * Everything the Calendar page needs from the server. Two implementations:
+ * Everything the Planner page needs from the server. Two implementations:
  * `liveCalendar` (the real API) and `demoCalendar` (sample data,
- * `/calendar?demo=outlook`). The UI only knows this interface.
+ * `/planner?demo=outlook`). The UI only knows this interface.
  */
 export interface CalendarClient {
   readonly demo: boolean;
@@ -48,7 +48,7 @@ function describeSync(r: SyncResult): string {
   if (r.created) return `Created "${r.documentName}" on your reMarkable with the next ${r.added.length} days.`;
   const parts = [
     r.added.length ? `added ${r.added.length} day${r.added.length === 1 ? "" : "s"}` : "",
-    r.updated.length ? `added updated pages for ${r.updated.length} day${r.updated.length === 1 ? "" : "s"} with changed meetings` : "",
+    r.updated.length ? `refreshed ${r.updated.length} changed day${r.updated.length === 1 ? "" : "s"} (your handwriting stays)` : "",
   ].filter(Boolean);
   return parts.length ? `Synced "${r.documentName}": ${parts.join(", ")}.` : `"${r.documentName}" is already up to date.`;
 }

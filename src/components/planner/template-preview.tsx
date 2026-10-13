@@ -12,7 +12,7 @@ const PAGE_PADDING = 16;
 const PAGE_ASPECT = 1404 / 1872;
 
 /**
- * The middle of the Calendar page: a toolbar to pick the day and save, and the
+ * The middle of the Planner page: a toolbar to pick the day and save, and the
  * template exactly as it will appear on the tablet, fitted to the space.
  */
 export function TemplatePreview({
@@ -98,7 +98,7 @@ export function TemplatePreview({
         </button>
         <SyncButton
           disabled={!canSync}
-          title={canSync ? "Adds today and the next 6 days to your Calendar document" : "Connect your reMarkable first"}
+          title={canSync ? "Adds today and the next 6 days to your Planner document" : "Connect your reMarkable first"}
           onSync={sync}
         />
       </div>

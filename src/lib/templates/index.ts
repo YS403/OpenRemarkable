@@ -4,14 +4,14 @@ import type { Fonts, TemplateInput } from "./kit";
 import { addMeetingPages, renderMeetings } from "./meetings";
 import type { TemplateId } from "./names";
 import { addPlannerPages, renderPlanner } from "./planner";
-import { addSchedulePages, renderSchedule } from "./schedule";
+import { addDayPages, renderDay } from "./day";
 
 export type { Fonts, TemplateInput } from "./kit";
 export { embedFonts, PAGE } from "./kit";
 export { DEFAULT_TEMPLATE, isTemplateId, type TemplateId, templateName, TEMPLATES } from "./names";
 
 const RENDERERS: Record<TemplateId, (input: TemplateInput) => Promise<Uint8Array>> = {
-  schedule: renderSchedule,
+  day: renderDay,
   planner: renderPlanner,
   meetings: renderMeetings,
 };
@@ -26,7 +26,7 @@ export function renderTemplate(id: TemplateId, input: TemplateInput): Promise<Ui
 }
 
 const APPENDERS: Record<TemplateId, (doc: PDFDocument, fonts: Fonts, input: TemplateInput) => number> = {
-  schedule: addSchedulePages,
+  day: addDayPages,
   planner: addPlannerPages,
   meetings: addMeetingPages,
 };

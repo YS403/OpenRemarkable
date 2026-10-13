@@ -3,11 +3,11 @@
  * UI code can use them without loading pdf-lib.
  */
 
-export type TemplateId = "schedule" | "planner" | "meetings";
+export type TemplateId = "planner" | "day" | "meetings";
 
 export const TEMPLATES: readonly { id: TemplateId; name: string; description: string; prefix: string }[] = [
   { id: "planner", name: "Daily planner", description: "Schedule beside top 3, to-dos and notes.", prefix: "Planner" },
-  { id: "schedule", name: "Schedule", description: "Full-width time blocks, notes below.", prefix: "Agenda" },
+  { id: "day", name: "My day", description: "24-hour day with meetings and prayer times, to-dos and notes.", prefix: "Day" },
   { id: "meetings", name: "Meeting notes", description: "Overview, then a notes page per meeting.", prefix: "Meetings" },
 ];
 

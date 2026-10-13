@@ -18,7 +18,8 @@ describe("seal / unseal", () => {
   it("rejects tampering, other keys and garbage", () => {
     const token = seal("value", SECRET);
     const [v, iv, body, tag] = token.split(".");
-    const flipped = body.slice(0, -1) + (body.endsWith("A") ? "B" : "A");
+    // change the first character: the last one can carry only padding bits, which decode the same
+    const flipped = (body.startsWith("A") ? "B" : "A") + body.slice(1);
     expect(unseal([v, iv, flipped, tag].join("."), SECRET)).toBeNull();
     expect(unseal(token, "b".repeat(40))).toBeNull();
     expect(unseal("not-a-token", SECRET)).toBeNull();

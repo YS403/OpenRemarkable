@@ -9,13 +9,14 @@ import type { ConnectionStatus } from "@/lib/client/api";
 import { createLocalSetting, parseBoolean } from "@/lib/client/local-setting";
 
 import { FeatureRequestDialog } from "./feature-request-dialog";
+import { Logo } from "./logo";
 
 const railCollapsed = createLocalSetting("nav-rail-collapsed", false, parseBoolean);
 
 /** Top-level pages, in rail order. */
 const PAGES: { href: string; label: string; icon: Icon }[] = [
   { href: "/", label: "Notebooks", icon: Notebook },
-  { href: "/calendar", label: "Calendar", icon: CalendarBlank },
+  { href: "/planner", label: "Planner", icon: CalendarBlank },
 ];
 
 const STATUS_LABEL: Record<ConnectionStatus["state"], string> = {
@@ -54,10 +55,10 @@ export function NavRail({
       className={`surface-metal flex shrink-0 flex-col gap-1 p-2 text-on-brand motion-safe:transition-[width] motion-safe:duration-200 ${collapsed ? "w-14" : "w-52"}`}
     >
       <div className="mb-2 flex h-10 items-center gap-2.5 px-1.5">
-        <span className="grid size-7 shrink-0 place-items-center rounded-md bg-white/15 text-xs font-semibold shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]" aria-hidden>
-          rm
+        <span className="grid size-7 shrink-0 place-items-center rounded-md bg-white/15 shadow-[inset_0_1px_0_rgb(255_255_255/0.25)]" aria-hidden>
+          <Logo size={18} />
         </span>
-        <span className={`${label} text-sm font-semibold tracking-tight`}>openremarkable</span>
+        <span className={`${label} text-sm font-semibold tracking-tight`}>OpenRemarkable</span>
       </div>
 
       {PAGES.map(({ href, label: text, icon: PageIcon }) => {

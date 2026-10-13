@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "openremarkable",
+  title: "OpenRemarkable",
   description: "Browse reMarkable cloud files and render notebooks.",
 };
 
