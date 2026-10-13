@@ -1,6 +1,8 @@
 # OpenRemarkable
 
-A web app that works alongside your reMarkable tablet. Browse and read the notebooks and PDFs in your reMarkable cloud, add typed text to them, and upload new PDFs. The Planner turns your Outlook or Google Calendar into printable-style day pages, with your meetings, optional prayer times, a to-do list and space for notes. With one click it sends them to your tablet as a single "Planner" notebook.
+A Next.js and TypeScript web app for the reMarkable tablet. It fetches your notebooks and PDFs from the reMarkable cloud and converts the raw `.rm` page files (pen strokes, typed text and PDF annotations) into vector PDFs that you can read in the browser. The conversion is our own TypeScript renderer. Its rules for pen shapes, widths, colours and page layout were reverse engineered from the official reMarkable desktop app, so pages look as they do there.
+
+It can also upload PDFs, add typed text to notebooks, and sync day planners built from your Outlook or Google Calendar back to the tablet.
 
 ## Planner
 
