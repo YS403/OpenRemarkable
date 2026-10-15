@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { type ConnectionStatus, disconnect, fetchItems, fetchStatus } from "@/lib/client/api";
+import { locationSearch, readLocation } from "@/lib/client/notebook-location";
 import { type CloudItem, ROOT_FOLDER } from "@/lib/remarkable/types";
 
 import { ConnectPanel } from "./connect-panel";
@@ -42,12 +43,32 @@ export function AppShell() {
 
   const connected = status.state === "connected";
 
+  // the document and folder from the address are reopened once the first listing arrives
+  const restored = useRef(false);
+
   const applyListing = useCallback((body: { items: CloudItem[]; fetchedAt: string }) => {
     setItems(body.items);
     setFetchedAt(body.fetchedAt);
+    if (!restored.current) {
+      restored.current = true;
+      const wanted = readLocation(window.location.search);
+      const doc = wanted.doc ? body.items.find((i) => i.id === wanted.doc && i.kind === "document") : undefined;
+      const folder = wanted.folder && body.items.some((i) => i.id === wanted.folder && i.kind === "folder") ? wanted.folder : null;
+      if (doc) setSelected(doc);
+      setFolder(folder ?? doc?.parent ?? ROOT_FOLDER);
+      return;
+    }
     // keep the open document in sync with its latest version
     setSelected((current) => (current ? (body.items.find((i) => i.id === current.id) ?? null) : null));
   }, []);
+
+  // keep the address in step with what's open, so a browser refresh comes back here
+  const selectedId = selected?.id ?? null;
+  useEffect(() => {
+    if (!restored.current) return;
+    const search = locationSearch(window.location.search, { doc: selectedId, folder }, ROOT_FOLDER);
+    if (search !== window.location.search) window.history.replaceState(window.history.state, "", `${window.location.pathname}${search}`);
+  }, [selectedId, folder, items]);
 
   useEffect(() => {
     if (!connected) return;
@@ -80,6 +101,8 @@ export function AppShell() {
       setItems(null);
       setSelected(null);
       setFolder(ROOT_FOLDER);
+      restored.current = false;
+      window.history.replaceState(window.history.state, "", window.location.pathname);
       setStatus({ state: "loading" });
       setStatusCheck((n) => n + 1);
     } catch (e) {

@@ -1,9 +1,10 @@
 "use client";
 
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 
 import { downloadEdited, fetchPages, fetchPdf, loadProject, saveProject, sendEditedToRemarkable } from "@/lib/client/api";
+import { loadPosition, positionFromScroll, type ReadingPosition, savePosition, scrollFromPosition } from "@/lib/client/notebook-location";
 import { type Element, type PageInfo, type Project, PROJECT_SCHEMA_VERSION } from "@/lib/editor/model";
 import type { CloudItem } from "@/lib/remarkable/types";
 
@@ -29,6 +30,17 @@ interface Loaded {
 }
 
 type Load = { phase: "loading" } | { phase: "error"; message: string } | ({ phase: "ready" } & Loaded);
+
+/**
+ * Fit a whole standard page on screen. Pages that grew taller (scrolled notebook
+ * pages) keep the same scale and scroll, so text stays a consistent size.
+ */
+function fitScale(sizes: readonly { width: number; height: number }[], viewport: { width: number; height: number }): number {
+  if (viewport.width <= 0 || sizes.length === 0) return 0;
+  const fitWidth = Math.max(...sizes.map((s) => s.width));
+  const fitHeight = Math.min(...sizes.map((s) => s.height));
+  return Math.min(MAX_SCALE, Math.max(0.2, Math.min((viewport.width - 2 * PAGE_GAP) / fitWidth, (viewport.height - 2 * PAGE_GAP) / fitHeight)));
+}
 
 /** Edit a notebook: its pages as the background, with an editable layer on top. */
 export function DocumentEditor({ item, onExported }: { item: CloudItem; onExported: () => void }) {
@@ -207,20 +219,34 @@ export function DocumentEditor({ item, onExported }: { item: CloudItem; onExport
     }
   }
 
+  const scale = load.phase === "ready" ? fitScale(load.sizes, viewport) : 0;
+
+  // Reading position: restored when the editor opens (after a browser refresh, or
+  // when a newer version of this notebook replaces it) and kept across resizes.
+  const position = useRef<ReadingPosition | null>(null);
+  const heights = load.phase === "ready" && scale > 0 ? load.sizes.map((s) => s.height * scale) : null;
+  const heightsKey = heights?.join(",") ?? "";
+  // before paint, so the page never flashes at the top first
+  useLayoutEffect(() => {
+    const el = scroller.current;
+    if (!el || !heightsKey) return;
+    position.current ??= loadPosition(item.id);
+    if (position.current) el.scrollTop = scrollFromPosition(position.current, heightsKey.split(",").map(Number), PAGE_GAP);
+  }, [heightsKey, item.id]);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(saveTimer.current), []);
+  function onScroll() {
+    const el = scroller.current;
+    if (!el || !heights) return;
+    const at = positionFromScroll(el.scrollTop, heights, PAGE_GAP);
+    position.current = at;
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => savePosition(item.id, at), 200);
+  }
+
   if (load.phase === "loading") return <Centered>Loading notebook…</Centered>;
   if (load.phase === "error") return <Centered>! {load.message}</Centered>;
 
-  // Fit a whole standard page on screen. Pages that grew taller (scrolled notebook
-  // pages) keep the same scale and scroll, so text stays a consistent size.
-  const fitWidth = Math.max(...load.sizes.map((s) => s.width));
-  const fitHeight = Math.min(...load.sizes.map((s) => s.height));
-  const scale =
-    viewport.width > 0
-      ? Math.min(
-          MAX_SCALE,
-          Math.max(0.2, Math.min((viewport.width - 2 * PAGE_GAP) / fitWidth, (viewport.height - 2 * PAGE_GAP) / fitHeight)),
-        )
-      : 0;
 
   return (
     <section className="flex h-full flex-col" aria-label={`Editing ${item.name}`}>
@@ -250,7 +276,7 @@ export function DocumentEditor({ item, onExported }: { item: CloudItem; onExport
           )}
         </div>
       )}
-      <div ref={scroller} className="min-h-0 flex-1 overflow-auto">
+      <div ref={scroller} onScroll={onScroll} className="min-h-0 flex-1 overflow-auto">
         {scale > 0 && (
           <div className="flex flex-col items-center" style={{ gap: PAGE_GAP, padding: PAGE_GAP }}>
             {load.sizes.map((size, i) => {
