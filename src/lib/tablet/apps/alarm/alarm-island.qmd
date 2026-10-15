@@ -1,0 +1,124 @@
+; Alarm service + "island" notification for the openremarkable Alarm app.
+;
+; Adds an invisible layer on top of the whole UI (MainView, the root view inside
+; main.qml's Window; patching main.qml itself has no effect on 3.25). It holds
+; the alarm time; when it is reached it shows a small black pill at the top of
+; the screen for 5 seconds (tap to dismiss early), over whatever is open.
+; The Alarm app finds this layer by objectName "openremarkableAlarm" and calls
+; setAlarm(epochMs) / cancelAlarm().
+;
+; Written against firmware 3.25.1.1. Applied by qt-resource-rebuilder (XOVI);
+; install into /home/root/xovi/exthome/qt-resource-rebuilder/.
+; Limits: the alarm lives in memory, so restarting the UI clears it, and while
+; the tablet sleeps nothing runs: an alarm due during sleep shows on wake.
+
+AFFECT /qml/device/view/main/MainView.qml
+    TRAVERSE Background
+        LOCATE AFTER ALL
+        INSERT {
+            Item {
+                id: orAlarm
+                objectName: "openremarkableAlarm"
+                anchors.fill: parent
+                z: 1000000
+
+                property double alarmAt: 0          // epoch ms; 0 = no alarm
+                readonly property bool armed: alarmAt > 0
+                readonly property int showMs: 5000
+
+                function pad(n) { return n < 10 ? "0" + n : "" + n; }
+                function timeText(ms) {
+                    const d = new Date(ms);
+                    return pad(d.getHours()) + ":" + pad(d.getMinutes());
+                }
+                function setAlarm(ms) {
+                    alarmAt = ms;
+                    orAlarmCheck.restart();
+                    console.log("[openremarkable-alarm] set for " + new Date(ms).toString());
+                }
+                function cancelAlarm() { alarmAt = 0; }
+                Component.onCompleted: console.log("[openremarkable-alarm] layer ready; local time " + new Date().toString())
+                function showIsland(text) {
+                    orAlarmTime.text = text;
+                    orAlarmIsland.visible = true;
+                    orAlarmHide.restart();
+                }
+
+                // cheap wall-clock check; nothing is drawn until the alarm fires
+                Timer {
+                    id: orAlarmCheck
+                    interval: 2000
+                    repeat: true
+                    running: orAlarm.armed
+                    onTriggered: {
+                        if (Date.now() >= orAlarm.alarmAt) {
+                            const at = orAlarm.alarmAt;
+                            orAlarm.alarmAt = 0;
+                            orAlarm.showIsland(orAlarm.timeText(at));
+                        }
+                    }
+                }
+                Timer {
+                    id: orAlarmHide
+                    interval: orAlarm.showMs
+                    onTriggered: orAlarmIsland.visible = false
+                }
+
+                Rectangle {
+                    id: orAlarmIsland
+                    objectName: "openremarkableAlarmIsland"
+                    visible: false
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: 24
+                    height: 84
+                    radius: height / 2
+                    width: orAlarmRow.implicitWidth + 2 * 40
+                    color: "black"
+
+                    Row {
+                        id: orAlarmRow
+                        anchors.centerIn: parent
+                        spacing: 18
+
+                        // clock glyph, drawn so it never depends on icon assets
+                        Item {
+                            width: 44
+                            height: 44
+                            anchors.verticalCenter: parent.verticalCenter
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: width / 2
+                                color: "transparent"
+                                border.color: "white"
+                                border.width: 4
+                            }
+                            Rectangle { x: 20; y: 9; width: 4; height: 15; radius: 2; color: "white" }
+                            Rectangle { x: 20; y: 20; width: 12; height: 4; radius: 2; color: "white" }
+                        }
+                        Text {
+                            text: "Alarm"
+                            color: "white"
+                            font.family: "reMarkable Sans"
+                            font.pixelSize: 36
+                            font.bold: true
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            id: orAlarmTime
+                            objectName: "openremarkableAlarmTime"
+                            color: "white"
+                            font.family: "reMarkable Sans"
+                            font.pixelSize: 36
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: orAlarmIsland.visible = false
+                    }
+                }
+            }
+        }
+    END TRAVERSE
+END AFFECT

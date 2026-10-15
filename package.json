@@ -26,6 +26,7 @@
     "react-konva": "19.3.0",
     "rmapi-js": "^14.4.0",
     "server-only": "^0.0.1",
+    "ssh2": "1.17.0",
     "zod": "4.6.5"
   },
   "devDependencies": {
@@ -33,6 +34,7 @@
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/ssh2": "1.15.6",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "tailwindcss": "^4",

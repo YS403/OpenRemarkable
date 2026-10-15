@@ -1,0 +1,43 @@
+; Adds an "Alarm" entry to the reMarkable sidebar, directly under Integrations,
+; that opens the openremarkable Alarm (an AppLoad app) full screen.
+;
+; Written against firmware 3.25.1.1, where the Integrations foldout sits inside
+; DeviceKeyboardNavigationHandler#integrationsHandler in Sidebar.qml.
+; Applied by qt-resource-rebuilder (XOVI); install into
+; /home/root/xovi/exthome/qt-resource-rebuilder/ next to appload.qmd.
+; Requires AppLoad with the alarm installed as id "openremarkable-alarm", and alarm-island.qmd for the notification.
+;
+; Unlike the Integrations foldout, this entry doesn't depend on Wi-Fi.
+; It also hides AppLoad's own "AppLoad" sidebar entry, which isn't needed
+; (at runtime, so it works whichever patch is applied first).
+
+AFFECT /qml/device/view/navigator/Sidebar.qml
+    IMPORT net.asivery.AppLoad 1.0
+    TRAVERSE DeviceKeyboardNavigationHandler > ColumnLayout#filterColumn
+        LOCATE AFTER DeviceKeyboardNavigationHandler#integrationsHandler
+        INSERT {
+            SidebarFilterItem {
+                id: openAlarm
+                objectName: "openAlarm"
+                title: "Alarm"
+                iconSource: "qrc:/ark/icons/system_clock"
+                active: false
+                Layout.preferredHeight: Values.navigatorSidebarItemHeight
+                Layout.preferredWidth: parent.width
+                navigationHandler: sidebar
+                onClicked: activate()
+
+                function activate() {
+                    sidebar.toggle();
+                    AppLoadLauncher.launchApplication("openremarkable-alarm", [], {}, false);
+                }
+
+                Component.onCompleted: {
+                    for (var i = 0; i < parent.children.length; i++) {
+                        if (parent.children[i].objectName === "openAppLoad") parent.children[i].visible = false;
+                    }
+                }
+            }
+        }
+    END TRAVERSE
+END AFFECT

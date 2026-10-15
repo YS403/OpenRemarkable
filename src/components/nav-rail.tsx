@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowsClockwise, CalendarBlank, CaretDoubleLeft, CaretDoubleRight, type Icon, Lightbulb, Notebook, SignOut } from "@phosphor-icons/react";
+import { ArrowsClockwise, CalendarBlank, CaretDoubleLeft, CaretDoubleRight, type Icon, Lightbulb, Notebook, SignOut, Storefront } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -17,6 +17,7 @@ const railCollapsed = createLocalSetting("nav-rail-collapsed", false, parseBoole
 const PAGES: { href: string; label: string; icon: Icon }[] = [
   { href: "/", label: "Notebooks", icon: Notebook },
   { href: "/planner", label: "Planner", icon: CalendarBlank },
+  { href: "/apps", label: "App Store", icon: Storefront },
 ];
 
 const STATUS_LABEL: Record<ConnectionStatus["state"], string> = {
