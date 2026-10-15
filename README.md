@@ -11,8 +11,8 @@ Its App Store installs new apps onto the tablet itself, straight from the browse
 You need [Node.js](https://nodejs.org) 20.9 or newer.
 
 ```bash
-git clone https://github.com/YS403/Openremarkable.git
-cd Openremarkable
+git clone https://github.com/YS403/OpenRemarkable.git
+cd OpenRemarkable
 npm install
 npm run dev
 ```
